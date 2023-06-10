@@ -1,6 +1,8 @@
 use std::mem;
 use std::ops::Deref;
 
+use crate::util::{error::Error, range::Range};
+
 use super::Stream;
 use ffi::*;
 use format::context::common::Context;
@@ -59,6 +61,22 @@ impl<'a> StreamMut<'a> {
         unsafe {
             let metadata = metadata.disown();
             (*self.as_mut_ptr()).metadata = metadata;
+        }
+    }
+
+    pub fn seek<R: Range<i64>>(&mut self, ts: i64, range: R) -> Result<(), Error> {
+        unsafe {
+            match avformat_seek_file(
+                self.context.as_mut_ptr(),
+                self.index as libc::c_int,
+                range.start().cloned().unwrap_or(i64::MIN),
+                ts,
+                range.end().cloned().unwrap_or(i64::MAX),
+                0,
+            ) {
+                s if s >= 0 => Ok(()),
+                e => Err(Error::from(e)),
+            }
         }
     }
 }
