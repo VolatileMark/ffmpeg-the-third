@@ -4,9 +4,9 @@ use std::ops::Deref;
 use crate::util::{error::Error, range::Range};
 
 use super::Stream;
-use ffi::*;
-use format::context::common::Context;
-use {codec, Dictionary, Rational};
+use crate::ffi::*;
+use crate::format::context::common::Context;
+use crate::{codec, Dictionary, Rational};
 
 pub struct StreamMut<'a> {
     context: &'a mut Context,

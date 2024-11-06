@@ -1,24 +1,28 @@
 use std::ptr;
 
-use ffi::*;
-use format;
-use Format;
+use crate::ffi::*;
+use crate::format;
 
-pub struct AudioIter(*mut AVOutputFormat);
+pub struct AudioIter(*const AVOutputFormat);
 
 impl Iterator for AudioIter {
-    type Item = Format;
+    type Item = format::Output;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         unsafe {
-            let ptr = av_output_audio_device_next(self.0) as *mut AVOutputFormat;
+            let inner = self.0;
 
-            if ptr.is_null() && !self.0.is_null() {
-                None
+            // Pre-5.0 FFmpeg uses a non-const pointer here
+            #[cfg(not(feature = "ffmpeg_5_0"))]
+            let inner = inner as *mut _;
+
+            let ptr = av_output_audio_device_next(inner);
+
+            if let Some(output) = format::Output::from_raw(ptr) {
+                self.0 = ptr;
+                Some(output)
             } else {
-                self.0 = ptr as *mut AVOutputFormat;
-
-                Some(Format::Output(format::Output::wrap(ptr)))
+                None
             }
         }
     }
@@ -28,21 +32,26 @@ pub fn audio() -> AudioIter {
     AudioIter(ptr::null_mut())
 }
 
-pub struct VideoIter(*mut AVOutputFormat);
+pub struct VideoIter(*const AVOutputFormat);
 
 impl Iterator for VideoIter {
-    type Item = Format;
+    type Item = format::Output;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         unsafe {
-            let ptr = av_output_video_device_next(self.0) as *mut AVOutputFormat;
+            let inner = self.0;
 
-            if ptr.is_null() && !self.0.is_null() {
-                None
+            // Pre-5.0 FFmpeg uses a non-const pointer here
+            #[cfg(not(feature = "ffmpeg_5_0"))]
+            let inner = inner as *mut _;
+
+            let ptr = av_output_video_device_next(inner);
+
+            if let Some(output) = format::Output::from_raw(ptr) {
+                self.0 = ptr;
+                Some(output)
             } else {
-                self.0 = ptr as *mut AVOutputFormat;
-
-                Some(Format::Output(format::Output::wrap(ptr)))
+                None
             }
         }
     }

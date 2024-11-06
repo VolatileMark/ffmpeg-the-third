@@ -5,10 +5,10 @@ use std::rc::Rc;
 use super::decoder::Decoder;
 use super::encoder::Encoder;
 use super::{threading, Compliance, Debug, Flags, Id, Parameters};
-use ffi::*;
+use crate::ffi::*;
+use crate::media;
+use crate::{Codec, Error};
 use libc::c_int;
-use media;
-use {Codec, Error};
 
 pub struct Context {
     ptr: *mut AVCodecContext,
@@ -62,13 +62,7 @@ impl Context {
     }
 
     pub fn codec(&self) -> Option<Codec> {
-        unsafe {
-            if (*self.as_ptr()).codec.is_null() {
-                None
-            } else {
-                Some(Codec::wrap((*self.as_ptr()).codec as *mut _))
-            }
-        }
+        unsafe { Codec::from_raw((*self.as_ptr()).codec) }
     }
 
     pub fn medium(&self) -> media::Type {

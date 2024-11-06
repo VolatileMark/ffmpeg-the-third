@@ -1,8 +1,6 @@
-use std::ffi::CStr;
-use std::str::from_utf8_unchecked;
-
-use ffi::AVColorSpace::*;
-use ffi::*;
+use crate::ffi::AVColorSpace::*;
+use crate::ffi::*;
+use crate::utils;
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +23,13 @@ pub enum Space {
     ChromaDerivedNCL,
     ChromaDerivedCL,
     ICTCP,
+
+    #[cfg(feature = "ffmpeg_7_1")]
+    IPTC2,
+    #[cfg(feature = "ffmpeg_7_1")]
+    YCGCORE,
+    #[cfg(feature = "ffmpeg_7_1")]
+    YCGCORO,
 }
 
 impl Space {
@@ -36,8 +41,7 @@ impl Space {
         }
         unsafe {
             let ptr = av_color_space_name((*self).into());
-            ptr.as_ref()
-                .map(|ptr| from_utf8_unchecked(CStr::from_ptr(ptr).to_bytes()))
+            utils::optional_str_from_c_ptr(ptr)
         }
     }
 }
@@ -62,6 +66,13 @@ impl From<AVColorSpace> for Space {
             AVCOL_SPC_CHROMA_DERIVED_NCL => Space::ChromaDerivedNCL,
             AVCOL_SPC_CHROMA_DERIVED_CL => Space::ChromaDerivedCL,
             AVCOL_SPC_ICTCP => Space::ICTCP,
+
+            #[cfg(feature = "ffmpeg_7_1")]
+            AVCOL_SPC_IPT_C2 => Space::IPTC2,
+            #[cfg(feature = "ffmpeg_7_1")]
+            AVCOL_SPC_YCGCO_RE => Space::YCGCORE,
+            #[cfg(feature = "ffmpeg_7_1")]
+            AVCOL_SPC_YCGCO_RO => Space::YCGCORO,
 
             #[cfg(feature = "non-exhaustive-enums")]
             _ => unimplemented!(),
@@ -88,6 +99,13 @@ impl From<Space> for AVColorSpace {
             Space::ChromaDerivedNCL => AVCOL_SPC_CHROMA_DERIVED_NCL,
             Space::ChromaDerivedCL => AVCOL_SPC_CHROMA_DERIVED_CL,
             Space::ICTCP => AVCOL_SPC_ICTCP,
+
+            #[cfg(feature = "ffmpeg_7_1")]
+            Space::IPTC2 => AVCOL_SPC_IPT_C2,
+            #[cfg(feature = "ffmpeg_7_1")]
+            Space::YCGCORE => AVCOL_SPC_YCGCO_RE,
+            #[cfg(feature = "ffmpeg_7_1")]
+            Space::YCGCORO => AVCOL_SPC_YCGCO_RO,
         }
     }
 }

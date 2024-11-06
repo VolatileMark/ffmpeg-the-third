@@ -13,12 +13,12 @@ pub use self::context::{Context, Sink, Source};
 pub mod graph;
 pub use self::graph::Graph;
 
-use std::ffi::{CStr, CString};
-use std::str::from_utf8_unchecked;
+use std::ffi::CString;
 
-use ffi::*;
+use crate::ffi::*;
+use crate::utils;
 #[cfg(not(feature = "ffmpeg_5_0"))]
-use Error;
+use crate::Error;
 
 #[cfg(not(feature = "ffmpeg_5_0"))]
 pub fn register_all() {
@@ -42,11 +42,11 @@ pub fn version() -> u32 {
 }
 
 pub fn configuration() -> &'static str {
-    unsafe { from_utf8_unchecked(CStr::from_ptr(avfilter_configuration()).to_bytes()) }
+    unsafe { utils::str_from_c_ptr(avfilter_configuration()) }
 }
 
 pub fn license() -> &'static str {
-    unsafe { from_utf8_unchecked(CStr::from_ptr(avfilter_license()).to_bytes()) }
+    unsafe { utils::str_from_c_ptr(avfilter_license()) }
 }
 
 pub fn find(name: &str) -> Option<Filter> {

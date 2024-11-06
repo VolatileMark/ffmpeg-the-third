@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 use std::slice;
 
 use super::Packet;
-use ffi::AVPacketSideDataType::*;
-use ffi::*;
+use crate::ffi::AVPacketSideDataType::*;
+use crate::ffi::*;
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 
@@ -37,12 +37,9 @@ pub enum Type {
     ContentLightLevel,
     A53CC,
 
-    #[cfg(feature = "ffmpeg_4_0")]
     EncryptionInitInfo,
-    #[cfg(feature = "ffmpeg_4_0")]
     EncryptionInfo,
 
-    #[cfg(feature = "ffmpeg_4_1")]
     AFD,
 
     #[cfg(feature = "ffmpeg_4_3")]
@@ -57,6 +54,20 @@ pub enum Type {
 
     #[cfg(feature = "ffmpeg_5_0")]
     DYNAMIC_HDR10_PLUS,
+
+    #[cfg(feature = "ffmpeg_7_0")]
+    IAMF_MIX_GAIN_PARAM,
+    #[cfg(feature = "ffmpeg_7_0")]
+    IAMF_DEMIXING_INFO_PARAM,
+    #[cfg(feature = "ffmpeg_7_0")]
+    IAMF_RECON_GAIN_INFO_PARAM,
+    #[cfg(feature = "ffmpeg_7_0")]
+    AMBIENT_VIEWING_ENVIRONMENT,
+
+    #[cfg(feature = "ffmpeg_7_1")]
+    FrameCropping,
+    #[cfg(feature = "ffmpeg_7_1")]
+    LCEVC,
 }
 
 impl From<AVPacketSideDataType> for Type {
@@ -89,12 +100,9 @@ impl From<AVPacketSideDataType> for Type {
             AV_PKT_DATA_CONTENT_LIGHT_LEVEL => Type::ContentLightLevel,
             AV_PKT_DATA_A53_CC => Type::A53CC,
 
-            #[cfg(feature = "ffmpeg_4_0")]
             AV_PKT_DATA_ENCRYPTION_INIT_INFO => Type::EncryptionInitInfo,
-            #[cfg(feature = "ffmpeg_4_0")]
             AV_PKT_DATA_ENCRYPTION_INFO => Type::EncryptionInfo,
 
-            #[cfg(feature = "ffmpeg_4_1")]
             AV_PKT_DATA_AFD => Type::AFD,
 
             #[cfg(feature = "ffmpeg_4_3")]
@@ -109,6 +117,20 @@ impl From<AVPacketSideDataType> for Type {
 
             #[cfg(feature = "ffmpeg_5_0")]
             AV_PKT_DATA_DYNAMIC_HDR10_PLUS => Type::DYNAMIC_HDR10_PLUS,
+
+            #[cfg(feature = "ffmpeg_7_0")]
+            AV_PKT_DATA_IAMF_MIX_GAIN_PARAM => Type::IAMF_MIX_GAIN_PARAM,
+            #[cfg(feature = "ffmpeg_7_0")]
+            AV_PKT_DATA_IAMF_DEMIXING_INFO_PARAM => Type::IAMF_DEMIXING_INFO_PARAM,
+            #[cfg(feature = "ffmpeg_7_0")]
+            AV_PKT_DATA_IAMF_RECON_GAIN_INFO_PARAM => Type::IAMF_RECON_GAIN_INFO_PARAM,
+            #[cfg(feature = "ffmpeg_7_0")]
+            AV_PKT_DATA_AMBIENT_VIEWING_ENVIRONMENT => Type::AMBIENT_VIEWING_ENVIRONMENT,
+
+            #[cfg(feature = "ffmpeg_7_1")]
+            AV_PKT_DATA_FRAME_CROPPING => Type::FrameCropping,
+            #[cfg(feature = "ffmpeg_7_1")]
+            AV_PKT_DATA_LCEVC => Type::LCEVC,
 
             #[cfg(feature = "non-exhaustive-enums")]
             _ => unimplemented!(),
@@ -146,12 +168,9 @@ impl From<Type> for AVPacketSideDataType {
             Type::ContentLightLevel => AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
             Type::A53CC => AV_PKT_DATA_A53_CC,
 
-            #[cfg(feature = "ffmpeg_4_0")]
             Type::EncryptionInitInfo => AV_PKT_DATA_ENCRYPTION_INIT_INFO,
-            #[cfg(feature = "ffmpeg_4_0")]
             Type::EncryptionInfo => AV_PKT_DATA_ENCRYPTION_INFO,
 
-            #[cfg(feature = "ffmpeg_4_1")]
             Type::AFD => AV_PKT_DATA_AFD,
 
             #[cfg(feature = "ffmpeg_4_3")]
@@ -166,6 +185,20 @@ impl From<Type> for AVPacketSideDataType {
 
             #[cfg(feature = "ffmpeg_5_0")]
             Type::DYNAMIC_HDR10_PLUS => AV_PKT_DATA_DYNAMIC_HDR10_PLUS,
+
+            #[cfg(feature = "ffmpeg_7_0")]
+            Type::IAMF_MIX_GAIN_PARAM => AV_PKT_DATA_IAMF_MIX_GAIN_PARAM,
+            #[cfg(feature = "ffmpeg_7_0")]
+            Type::IAMF_DEMIXING_INFO_PARAM => AV_PKT_DATA_IAMF_DEMIXING_INFO_PARAM,
+            #[cfg(feature = "ffmpeg_7_0")]
+            Type::IAMF_RECON_GAIN_INFO_PARAM => AV_PKT_DATA_IAMF_RECON_GAIN_INFO_PARAM,
+            #[cfg(feature = "ffmpeg_7_0")]
+            Type::AMBIENT_VIEWING_ENVIRONMENT => AV_PKT_DATA_AMBIENT_VIEWING_ENVIRONMENT,
+
+            #[cfg(feature = "ffmpeg_7_1")]
+            Type::FrameCropping => AV_PKT_DATA_FRAME_CROPPING,
+            #[cfg(feature = "ffmpeg_7_1")]
+            Type::LCEVC => AV_PKT_DATA_LCEVC,
         }
     }
 }

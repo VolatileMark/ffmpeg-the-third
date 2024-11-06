@@ -3,13 +3,11 @@ use std::mem::size_of;
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 
-use libc;
-
 use super::common::Context;
 use super::destructor;
-use codec::traits;
-use ffi::*;
-use {format, ChapterMut, Dictionary, Error, Rational, StreamMut};
+use crate::codec::traits;
+use crate::ffi::*;
+use crate::{format, ChapterMut, Dictionary, Error, Rational, StreamMut};
 
 pub struct Output {
     ptr: *mut AVFormatContext,
@@ -37,7 +35,7 @@ impl Output {
 
 impl Output {
     pub fn format(&self) -> format::Output {
-        unsafe { format::Output::wrap((*self.as_ptr()).oformat as *mut AVOutputFormat) }
+        unsafe { format::Output::from_raw((*self.as_ptr()).oformat).expect("oformat is non-null") }
     }
 
     pub fn write_header(&mut self) -> Result<(), Error> {
@@ -70,7 +68,7 @@ impl Output {
         }
     }
 
-    pub fn add_stream<E: traits::Encoder>(&mut self, codec: E) -> Result<StreamMut, Error> {
+    pub fn add_stream<T, E: traits::Encoder<T>>(&mut self, codec: E) -> Result<StreamMut, Error> {
         unsafe {
             let codec = codec.encoder();
             let codec = codec.map_or(ptr::null(), |c| c.as_ptr());

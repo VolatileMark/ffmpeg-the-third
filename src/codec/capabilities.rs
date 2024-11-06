@@ -1,7 +1,8 @@
-use ffi::*;
+use crate::ffi::*;
 use libc::c_uint;
 
 bitflags! {
+    #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     pub struct Capabilities: c_uint {
         const DRAW_HORIZ_BAND     = AV_CODEC_CAP_DRAW_HORIZ_BAND;
         const DR1                 = AV_CODEC_CAP_DR1;
@@ -9,8 +10,6 @@ bitflags! {
         const TRUNCATED           = AV_CODEC_CAP_TRUNCATED;
         const DELAY               = AV_CODEC_CAP_DELAY;
         const SMALL_LAST_FRAME    = AV_CODEC_CAP_SMALL_LAST_FRAME;
-        #[cfg(not(feature = "ffmpeg_4_0"))]
-        const HWACCEL_VDPAU       = AV_CODEC_CAP_HWACCEL_VDPAU;
         const SUBFRAMES           = AV_CODEC_CAP_SUBFRAMES;
         const EXPERIMENTAL        = AV_CODEC_CAP_EXPERIMENTAL;
         const CHANNEL_CONF        = AV_CODEC_CAP_CHANNEL_CONF;

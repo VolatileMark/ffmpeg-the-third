@@ -1,17 +1,17 @@
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 
-use ffi::*;
+use crate::ffi::*;
 use libc::{c_float, c_int};
 
 use super::Encoder as Super;
 use super::{Comparison, Decision};
 #[cfg(not(feature = "ffmpeg_5_0"))]
 use super::{MotionEstimation, Prediction};
-use codec::{traits, Context};
-use {color, format, Dictionary, Error, Rational};
+use crate::codec::{traits, Context};
+use crate::{color, format, Dictionary, Error, Rational};
 #[cfg(not(feature = "ffmpeg_5_0"))]
-use {frame, packet};
+use crate::{frame, packet};
 
 pub struct Video(pub Super);
 
@@ -27,7 +27,7 @@ impl Video {
     }
 
     #[inline]
-    pub fn open_as<E: traits::Encoder>(mut self, codec: E) -> Result<Encoder, Error> {
+    pub fn open_as<T, E: traits::Encoder<T>>(mut self, codec: E) -> Result<Encoder, Error> {
         unsafe {
             if let Some(codec) = codec.encoder() {
                 match avcodec_open2(self.as_mut_ptr(), codec.as_ptr(), ptr::null_mut()) {
@@ -56,7 +56,7 @@ impl Video {
     }
 
     #[inline]
-    pub fn open_as_with<E: traits::Encoder>(
+    pub fn open_as_with<T, E: traits::Encoder<T>>(
         mut self,
         codec: E,
         options: Dictionary,
@@ -119,14 +119,6 @@ impl Video {
     #[inline]
     pub fn format(&self) -> format::Pixel {
         unsafe { format::Pixel::from((*self.as_ptr()).pix_fmt) }
-    }
-
-    #[inline]
-    #[cfg(feature = "ff_api_motion_est")]
-    pub fn set_motion_estimation(&mut self, value: MotionEstimation) {
-        unsafe {
-            (*self.as_mut_ptr()).me_method = value.into();
-        }
     }
 
     #[inline]
@@ -289,30 +281,6 @@ impl Video {
     pub fn set_me_range(&mut self, value: usize) {
         unsafe {
             (*self.as_mut_ptr()).me_range = value as c_int;
-        }
-    }
-
-    #[inline]
-    #[cfg(feature = "ff_api_quant_bias")]
-    pub fn set_intra_quant_bias(&mut self, value: Option<usize>) {
-        unsafe {
-            if let Some(value) = value {
-                (*self.as_mut_ptr()).intra_quant_bias = value as c_int;
-            } else {
-                (*self.as_mut_ptr()).intra_quant_bias = FF_DEFAULT_QUANT_BIAS;
-            }
-        }
-    }
-
-    #[inline]
-    #[cfg(feature = "ff_api_quant_bias")]
-    pub fn set_inter_quant_bias(&mut self, value: Option<usize>) {
-        unsafe {
-            if let Some(value) = value {
-                (*self.as_mut_ptr()).inter_quant_bias = value as c_int;
-            } else {
-                (*self.as_mut_ptr()).inter_quant_bias = FF_DEFAULT_QUANT_BIAS;
-            }
         }
     }
 

@@ -1,71 +1,65 @@
 use std::path::Path;
 
-use std::ffi::{CStr, CString};
-use std::ptr;
-use std::str::from_utf8_unchecked;
+use std::ffi::CString;
+use std::ptr::{self, NonNull};
 
 use super::Flags;
-use ffi::*;
-use {codec, media};
+use crate::ffi::*;
+use crate::{codec, media, utils};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Output {
-    ptr: *mut AVOutputFormat,
+    ptr: NonNull<AVOutputFormat>,
 }
 
 impl Output {
-    pub unsafe fn wrap(ptr: *mut AVOutputFormat) -> Self {
-        Output { ptr }
+    pub unsafe fn from_raw(ptr: *const AVOutputFormat) -> Option<Self> {
+        NonNull::new(ptr as *mut _).map(|ptr| Self { ptr })
     }
 
-    pub unsafe fn as_ptr(&self) -> *const AVOutputFormat {
-        self.ptr as *const _
+    pub fn as_ptr(self) -> *const AVOutputFormat {
+        self.ptr.as_ptr()
     }
 
-    pub unsafe fn as_mut_ptr(&mut self) -> *mut AVOutputFormat {
-        self.ptr
-    }
-}
-
-impl Output {
-    pub fn name(&self) -> &str {
-        unsafe { from_utf8_unchecked(CStr::from_ptr((*self.as_ptr()).name).to_bytes()) }
+    pub fn name(self) -> &'static str {
+        unsafe { utils::str_from_c_ptr((*self.as_ptr()).name) }
     }
 
-    pub fn description(&self) -> &str {
-        unsafe { from_utf8_unchecked(CStr::from_ptr((*self.as_ptr()).long_name).to_bytes()) }
+    pub fn description(self) -> &'static str {
+        unsafe { utils::optional_str_from_c_ptr((*self.as_ptr()).long_name).unwrap_or("") }
     }
 
-    pub fn extensions(&self) -> Vec<&str> {
+    pub fn flags(self) -> Flags {
+        unsafe { Flags::from_bits_truncate((*self.as_ptr()).flags) }
+    }
+
+    pub fn extensions(self) -> Vec<&'static str> {
         unsafe {
             let ptr = (*self.as_ptr()).extensions;
 
             if ptr.is_null() {
                 Vec::new()
             } else {
-                from_utf8_unchecked(CStr::from_ptr(ptr).to_bytes())
-                    .split(',')
-                    .collect()
+                utils::str_from_c_ptr(ptr).split(',').collect()
             }
         }
     }
 
-    pub fn mime_types(&self) -> Vec<&str> {
+    pub fn mime_types(self) -> Vec<&'static str> {
         unsafe {
             let ptr = (*self.as_ptr()).mime_type;
 
             if ptr.is_null() {
                 Vec::new()
             } else {
-                from_utf8_unchecked(CStr::from_ptr(ptr).to_bytes())
-                    .split(',')
-                    .collect()
+                utils::str_from_c_ptr(ptr).split(',').collect()
             }
         }
     }
 
-    pub fn codec<P: AsRef<Path>>(&self, path: &P, kind: media::Type) -> codec::Id {
+    pub fn codec<P: AsRef<Path>>(self, path: P, kind: media::Type) -> codec::Id {
         // XXX: use to_cstring when stable
-        let path = CString::new(path.as_ref().as_os_str().to_str().unwrap()).unwrap();
+        let path = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         unsafe {
             codec::Id::from(av_guess_codec(
@@ -76,9 +70,5 @@ impl Output {
                 kind.into(),
             ))
         }
-    }
-
-    pub fn flags(&self) -> Flags {
-        unsafe { Flags::from_bits_truncate((*self.as_ptr()).flags) }
     }
 }

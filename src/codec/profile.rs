@@ -1,5 +1,5 @@
 use super::Id;
-use ffi::*;
+use crate::ffi::*;
 use libc::c_int;
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
@@ -384,6 +384,34 @@ impl From<Profile> for c_int {
             Profile::VP9(VP9::_1) => FF_PROFILE_VP9_1,
             Profile::VP9(VP9::_2) => FF_PROFILE_VP9_2,
             Profile::VP9(VP9::_3) => FF_PROFILE_VP9_3,
+        }
+    }
+}
+
+pub struct ProfileIter {
+    id: Id,
+    ptr: *const AVProfile,
+}
+
+impl ProfileIter {
+    pub fn new(id: Id, ptr: *const AVProfile) -> Self {
+        ProfileIter { id, ptr }
+    }
+}
+
+impl Iterator for ProfileIter {
+    type Item = Profile;
+
+    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+        unsafe {
+            if (*self.ptr).profile == FF_PROFILE_UNKNOWN {
+                return None;
+            }
+
+            let profile = Profile::from((self.id, (*self.ptr).profile));
+            self.ptr = self.ptr.offset(1);
+
+            Some(profile)
         }
     }
 }

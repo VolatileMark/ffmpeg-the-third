@@ -3,13 +3,13 @@ use std::ops::{Deref, DerefMut};
 use std::slice;
 
 use super::Frame;
-use color;
-use ffi::*;
+use crate::color;
+use crate::ffi::*;
+use crate::picture;
+use crate::util::chroma;
+use crate::util::format;
+use crate::Rational;
 use libc::c_int;
-use picture;
-use util::chroma;
-use util::format;
-use Rational;
 
 #[derive(PartialEq, Eq)]
 pub struct Video(Frame);
@@ -52,7 +52,9 @@ impl Video {
             if (*self.as_ptr()).format == -1 {
                 format::Pixel::None
             } else {
-                format::Pixel::from(mem::transmute::<_, AVPixelFormat>((*self.as_ptr()).format))
+                format::Pixel::from(mem::transmute::<c_int, AVPixelFormat>(
+                    (*self.as_ptr()).format,
+                ))
             }
         }
     }
@@ -173,11 +175,13 @@ impl Video {
         unsafe { Rational::from((*self.as_ptr()).sample_aspect_ratio) }
     }
 
+    #[cfg(not(feature = "ffmpeg_7_0"))]
     #[inline]
     pub fn coded_number(&self) -> usize {
         unsafe { (*self.as_ptr()).coded_picture_number as usize }
     }
 
+    #[cfg(not(feature = "ffmpeg_7_0"))]
     #[inline]
     pub fn display_number(&self) -> usize {
         unsafe { (*self.as_ptr()).display_picture_number as usize }

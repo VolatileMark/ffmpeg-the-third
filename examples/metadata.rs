@@ -5,7 +5,7 @@ use std::env;
 fn main() -> Result<(), ffmpeg::Error> {
     ffmpeg::init().unwrap();
 
-    match ffmpeg::format::input(&env::args().nth(1).expect("missing file")) {
+    match ffmpeg::format::input(env::args().nth(1).expect("missing file")) {
         Ok(context) => {
             for (k, v) in context.metadata().iter() {
                 println!("{k}: {v}");
@@ -73,10 +73,14 @@ fn main() -> Result<(), ffmpeg::Error> {
                         println!("\tmax_rate: {}", audio.max_bit_rate());
                         println!("\tdelay: {}", audio.delay());
                         println!("\taudio.rate: {}", audio.rate());
-                        println!("\taudio.channels: {}", audio.channels());
                         println!("\taudio.format: {:?}", audio.format());
-                        println!("\taudio.frames: {}", audio.frames());
                         println!("\taudio.align: {}", audio.align());
+                        #[cfg(feature = "ffmpeg_5_1")]
+                        println!("\taudio.ch_layout: {:?}", audio.ch_layout());
+
+                        #[cfg(not(feature = "ffmpeg_5_1"))]
+                        println!("\taudio.channels: {}", audio.channels());
+                        #[cfg(not(feature = "ffmpeg_5_1"))]
                         println!("\taudio.channel_layout: {:?}", audio.channel_layout());
                     }
                 }

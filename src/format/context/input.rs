@@ -1,14 +1,13 @@
 use std::ffi::CString;
 use std::mem;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Bound, Deref, DerefMut, RangeBounds};
 
 use super::common::Context;
 use super::destructor;
-use ffi::*;
-use util::range::Range;
+use crate::ffi::*;
 #[cfg(not(feature = "ffmpeg_5_0"))]
-use Codec;
-use {format, Error, Packet, Stream};
+use crate::Codec;
+use crate::{format, Error, Packet, Stream};
 
 pub struct Input {
     ptr: *mut AVFormatContext,
@@ -36,19 +35,14 @@ impl Input {
 
 impl Input {
     pub fn format(&self) -> format::Input {
-        unsafe { format::Input::wrap((*self.as_ptr()).iformat as *mut AVInputFormat) }
+        unsafe { format::Input::from_raw((*self.as_ptr()).iformat).expect("iformat is non-null") }
     }
 
     #[cfg(not(feature = "ffmpeg_5_0"))]
     pub fn video_codec(&self) -> Option<Codec> {
         unsafe {
             let ptr = (*self.as_ptr()).video_codec;
-
-            if ptr.is_null() {
-                None
-            } else {
-                Some(Codec::wrap(ptr))
-            }
+            Codec::from_raw(ptr)
         }
     }
 
@@ -56,12 +50,7 @@ impl Input {
     pub fn audio_codec(&self) -> Option<Codec> {
         unsafe {
             let ptr = (*self.as_ptr()).audio_codec;
-
-            if ptr.is_null() {
-                None
-            } else {
-                Some(Codec::wrap(ptr))
-            }
+            Codec::from_raw(ptr)
         }
     }
 
@@ -69,12 +58,7 @@ impl Input {
     pub fn subtitle_codec(&self) -> Option<Codec> {
         unsafe {
             let ptr = (*self.as_ptr()).subtitle_codec;
-
-            if ptr.is_null() {
-                None
-            } else {
-                Some(Codec::wrap(ptr))
-            }
+            Codec::from_raw(ptr)
         }
     }
 
@@ -82,12 +66,7 @@ impl Input {
     pub fn data_codec(&self) -> Option<Codec> {
         unsafe {
             let ptr = (*self.as_ptr()).data_codec;
-
-            if ptr.is_null() {
-                None
-            } else {
-                Some(Codec::wrap(ptr))
-            }
+            Codec::from_raw(ptr)
         }
     }
 
@@ -117,16 +96,21 @@ impl Input {
         }
     }
 
-    pub fn seek<R: Range<i64>>(&mut self, ts: i64, range: R) -> Result<(), Error> {
+    pub fn seek<R: RangeBounds<i64>>(&mut self, ts: i64, range: R) -> Result<(), Error> {
         unsafe {
-            match avformat_seek_file(
-                self.as_mut_ptr(),
-                -1,
-                range.start().cloned().unwrap_or(i64::min_value()),
-                ts,
-                range.end().cloned().unwrap_or(i64::max_value()),
-                0,
-            ) {
+            let start = match range.start_bound().cloned() {
+                Bound::Included(i) => i,
+                Bound::Excluded(i) => i.saturating_add(1),
+                Bound::Unbounded => i64::MIN,
+            };
+
+            let end = match range.end_bound().cloned() {
+                Bound::Included(i) => i,
+                Bound::Excluded(i) => i.saturating_sub(1),
+                Bound::Unbounded => i64::MAX,
+            };
+
+            match avformat_seek_file(self.as_mut_ptr(), -1, start, ts, end, 0) {
                 s if s >= 0 => Ok(()),
                 e => Err(Error::from(e)),
             }

@@ -20,7 +20,7 @@ fn main() {
                 println!("\t profiles: none");
             }
 
-            if let Ok(video) = codec.video() {
+            if let Some(video) = codec.video() {
                 if let Some(rates) = video.rates() {
                     println!("\t rates: {:?}", rates.collect::<Vec<_>>());
                 } else {
@@ -34,7 +34,7 @@ fn main() {
                 }
             }
 
-            if let Ok(audio) = codec.audio() {
+            if let Some(audio) = codec.audio() {
                 if let Some(rates) = audio.rates() {
                     println!("\t rates: {:?}", rates.collect::<Vec<_>>());
                 } else {
@@ -47,7 +47,8 @@ fn main() {
                     println!("\t formats: any");
                 }
 
-                if let Some(layouts) = audio.channel_layouts() {
+                #[cfg(feature = "ffmpeg_5_1")]
+                if let Some(layouts) = audio.ch_layouts() {
                     println!("\t channel_layouts: {:?}", layouts.collect::<Vec<_>>());
                 } else {
                     println!("\t channel_layouts: any");
@@ -70,7 +71,7 @@ fn main() {
                 println!("\t profiles: {:?}", profiles.collect::<Vec<_>>());
             }
 
-            if let Ok(video) = codec.video() {
+            if let Some(video) = codec.video() {
                 if let Some(rates) = video.rates() {
                     println!("\t rates: {:?}", rates.collect::<Vec<_>>());
                 } else {
@@ -84,7 +85,7 @@ fn main() {
                 }
             }
 
-            if let Ok(audio) = codec.audio() {
+            if let Some(audio) = codec.audio() {
                 if let Some(rates) = audio.rates() {
                     println!("\t rates: {:?}", rates.collect::<Vec<_>>());
                 } else {
@@ -97,7 +98,8 @@ fn main() {
                     println!("\t formats: any");
                 }
 
-                if let Some(layouts) = audio.channel_layouts() {
+                #[cfg(feature = "ffmpeg_5_1")]
+                if let Some(layouts) = audio.ch_layouts() {
                     println!("\t channel_layouts: {:?}", layouts.collect::<Vec<_>>());
                 } else {
                     println!("\t channel_layouts: any");

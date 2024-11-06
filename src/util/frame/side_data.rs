@@ -1,14 +1,13 @@
-use std::ffi::CStr;
 use std::marker::PhantomData;
 use std::slice;
-use std::str::from_utf8_unchecked;
 
 use super::Frame;
-use ffi::AVFrameSideDataType::*;
-use ffi::*;
+use crate::ffi::AVFrameSideDataType::*;
+use crate::ffi::*;
+use crate::utils;
+use crate::DictionaryRef;
 #[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
-use DictionaryRef;
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
@@ -31,17 +30,14 @@ pub enum Type {
     ContentLightLevel,
     IccProfile,
 
-    #[cfg(all(feature = "ffmpeg_4_0", not(feature = "ffmpeg_5_0")))]
+    #[cfg(not(feature = "ffmpeg_5_0"))]
     QPTableProperties,
-    #[cfg(all(feature = "ffmpeg_4_0", not(feature = "ffmpeg_5_0")))]
+    #[cfg(not(feature = "ffmpeg_5_0"))]
     QPTableData,
 
-    #[cfg(feature = "ffmpeg_4_1")]
     S12M_TIMECODE,
 
-    #[cfg(feature = "ffmpeg_4_2")]
     DYNAMIC_HDR_PLUS,
-    #[cfg(feature = "ffmpeg_4_2")]
     REGIONS_OF_INTEREST,
 
     #[cfg(feature = "ffmpeg_4_3")]
@@ -64,14 +60,20 @@ pub enum Type {
 
     #[cfg(feature = "ffmpeg_6_0")]
     AMBIENT_VIEWING_ENVIRONMENT,
+
+    #[cfg(feature = "ffmpeg_6_1")]
+    VIDEO_HINT,
+
+    #[cfg(feature = "ffmpeg_7_1")]
+    LCEVC,
+    #[cfg(feature = "ffmpeg_7_1")]
+    ViewId,
 }
 
 impl Type {
     #[inline]
     pub fn name(&self) -> &'static str {
-        unsafe {
-            from_utf8_unchecked(CStr::from_ptr(av_frame_side_data_name((*self).into())).to_bytes())
-        }
+        unsafe { utils::str_from_c_ptr(av_frame_side_data_name((*self).into())) }
     }
 }
 
@@ -97,16 +99,13 @@ impl From<AVFrameSideDataType> for Type {
             AV_FRAME_DATA_CONTENT_LIGHT_LEVEL => Type::ContentLightLevel,
             AV_FRAME_DATA_ICC_PROFILE => Type::IccProfile,
 
-            #[cfg(all(feature = "ffmpeg_4_0", not(feature = "ffmpeg_5_0")))]
+            #[cfg(not(feature = "ffmpeg_5_0"))]
             AV_FRAME_DATA_QP_TABLE_PROPERTIES => Type::QPTableProperties,
-            #[cfg(all(feature = "ffmpeg_4_0", not(feature = "ffmpeg_5_0")))]
+            #[cfg(not(feature = "ffmpeg_5_0"))]
             AV_FRAME_DATA_QP_TABLE_DATA => Type::QPTableData,
-            #[cfg(feature = "ffmpeg_4_1")]
             AV_FRAME_DATA_S12M_TIMECODE => Type::S12M_TIMECODE,
 
-            #[cfg(feature = "ffmpeg_4_2")]
             AV_FRAME_DATA_DYNAMIC_HDR_PLUS => Type::DYNAMIC_HDR_PLUS,
-            #[cfg(feature = "ffmpeg_4_2")]
             AV_FRAME_DATA_REGIONS_OF_INTEREST => Type::REGIONS_OF_INTEREST,
 
             #[cfg(feature = "ffmpeg_4_3")]
@@ -129,6 +128,14 @@ impl From<AVFrameSideDataType> for Type {
 
             #[cfg(feature = "ffmpeg_6_0")]
             AV_FRAME_DATA_AMBIENT_VIEWING_ENVIRONMENT => Type::AMBIENT_VIEWING_ENVIRONMENT,
+
+            #[cfg(feature = "ffmpeg_6_1")]
+            AV_FRAME_DATA_VIDEO_HINT => Type::VIDEO_HINT,
+
+            #[cfg(feature = "ffmpeg_7_1")]
+            AV_FRAME_DATA_LCEVC => Type::LCEVC,
+            #[cfg(feature = "ffmpeg_7_1")]
+            AV_FRAME_DATA_VIEW_ID => Type::ViewId,
 
             #[cfg(feature = "non-exhaustive-enums")]
             _ => unimplemented!(),
@@ -158,16 +165,13 @@ impl From<Type> for AVFrameSideDataType {
             Type::ContentLightLevel => AV_FRAME_DATA_CONTENT_LIGHT_LEVEL,
             Type::IccProfile => AV_FRAME_DATA_ICC_PROFILE,
 
-            #[cfg(all(feature = "ffmpeg_4_0", not(feature = "ffmpeg_5_0")))]
+            #[cfg(not(feature = "ffmpeg_5_0"))]
             Type::QPTableProperties => AV_FRAME_DATA_QP_TABLE_PROPERTIES,
-            #[cfg(all(feature = "ffmpeg_4_0", not(feature = "ffmpeg_5_0")))]
+            #[cfg(not(feature = "ffmpeg_5_0"))]
             Type::QPTableData => AV_FRAME_DATA_QP_TABLE_DATA,
-            #[cfg(feature = "ffmpeg_4_1")]
             Type::S12M_TIMECODE => AV_FRAME_DATA_S12M_TIMECODE,
 
-            #[cfg(feature = "ffmpeg_4_2")]
             Type::DYNAMIC_HDR_PLUS => AV_FRAME_DATA_DYNAMIC_HDR_PLUS,
-            #[cfg(feature = "ffmpeg_4_2")]
             Type::REGIONS_OF_INTEREST => AV_FRAME_DATA_REGIONS_OF_INTEREST,
 
             #[cfg(feature = "ffmpeg_4_3")]
@@ -190,6 +194,14 @@ impl From<Type> for AVFrameSideDataType {
 
             #[cfg(feature = "ffmpeg_6_0")]
             Type::AMBIENT_VIEWING_ENVIRONMENT => AV_FRAME_DATA_AMBIENT_VIEWING_ENVIRONMENT,
+
+            #[cfg(feature = "ffmpeg_6_1")]
+            Type::VIDEO_HINT => AV_FRAME_DATA_VIDEO_HINT,
+
+            #[cfg(feature = "ffmpeg_7_1")]
+            Type::LCEVC => AV_FRAME_DATA_LCEVC,
+            #[cfg(feature = "ffmpeg_7_1")]
+            Type::ViewId => AV_FRAME_DATA_VIEW_ID,
         }
     }
 }
