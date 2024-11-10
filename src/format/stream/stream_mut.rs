@@ -1,7 +1,7 @@
 use std::mem;
-use std::ops::Deref;
+use std::ops::{Bound, Deref, RangeBounds};
 
-use crate::util::{error::Error, range::Range};
+use crate::util::error::Error;
 
 use super::Stream;
 use crate::ffi::*;
@@ -64,14 +64,26 @@ impl<'a> StreamMut<'a> {
         }
     }
 
-    pub fn seek<R: Range<i64>>(&mut self, ts: i64, range: R) -> Result<(), Error> {
+    pub fn seek<R: RangeBounds<i64>>(&mut self, ts: i64, range: R) -> Result<(), Error> {
         unsafe {
+            let start = match range.start_bound().cloned() {
+                Bound::Included(i) => i,
+                Bound::Excluded(i) => i.saturating_add(1),
+                Bound::Unbounded => i64::MIN,
+            };
+
+            let end = match range.end_bound().cloned() {
+                Bound::Included(i) => i,
+                Bound::Excluded(i) => i.saturating_sub(1),
+                Bound::Unbounded => i64::MAX,
+            };
+
             match avformat_seek_file(
                 self.context.as_mut_ptr(),
-                self.index as libc::c_int,
-                range.start().cloned().unwrap_or(i64::MIN),
+                self.index as _,
+                start,
                 ts,
-                range.end().cloned().unwrap_or(i64::MAX),
+                end,
                 0,
             ) {
                 s if s >= 0 => Ok(()),
